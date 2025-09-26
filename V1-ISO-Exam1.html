@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ISO/IEC 27001:2022 – Q&A (Bảng động có bộ lọc)</title>
+  <style>
+    :root { --bg:#0b0d10; --fg:#e6e8eb; --muted:#9aa4ad; --accent:#7c9cff; --card:#12161c; --border:#1f2730; }
+    html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif}
+    .container{max-width:1100px;margin:24px auto;padding:0 16px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 16px 8px 16px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+    h1{font-size:22px;margin:0 0 10px 0}
+    .sub{color:var(--muted);font-size:14px;margin-bottom:12px}
+    .controls{display:grid;grid-template-columns:1.2fr .8fr .8fr auto;gap:10px;align-items:end;margin-bottom:10px}
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+    input,select,button{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0f1318;color:var(--fg)}
+    input::placeholder{color:#6b7785}
+    button{cursor:pointer;background:var(--accent);color:#0b0d10;border:none;font-weight:600}
+    button.secondary{background:#0f1318;color:var(--fg);border:1px solid var(--border)}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    thead th{font-size:12px;color:var(--muted);text-align:left;padding:8px 12px}
+    tbody tr{background:#0f1318;border:1px solid var(--border)}
+    tbody td{padding:10px 12px;border-bottom:1px solid var(--border)}
+    tbody tr:first-child td{border-top-left-radius:12px;border-top-right-radius:12px}
+    tbody tr:last-child td{border-bottom-left-radius:12px;border-bottom-right-radius:12px;border-bottom:none}
+    .stt{width:64px;text-align:right}
+    .muted{color:var(--muted)}
+    .foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:12px}
+    .tag{display:inline-block;padding:2px 8px;border:1px solid var(--border);border-radius:999px;font-size:12px;margin-right:6px}
+    .hl{background:rgba(124,156,255,.25);padding:0 2px;border-radius:4px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>ISO/IEC 27001:2022 – Ngân hàng câu hỏi & đáp án</h1>
+      <p class="sub">Bảng động có bộ lọc, tìm kiếm nhanh, xuất CSV. Dữ liệu gồm 20 mục từ loạt ảnh trước đó.</p>
+
+      <div class="controls">
+        <div>
+          <label for="q">Tìm kiếm (tự lọc theo thời gian thực)</label>
+          <input id="q" type="search" placeholder="Nhập từ khoá… ví dụ: rủi ro, Annex A, sao lưu" />
+        </div>
+        <div>
+          <label for="col">Lọc theo cột</label>
+          <select id="col">
+            <option value="all">Tất cả cột</option>
+            <option value="stt">STT</option>
+            <option value="de">Đề bài</option>
+            <option value="dap">Đáp án</option>
+          </select>
+        </div>
+        <div>
+          <label for="match">Kiểu khớp</label>
+          <select id="match">
+            <option value="contains">Chứa từ</option>
+            <option value="starts">Bắt đầu bằng</option>
+            <option value="exact">Khớp chính xác</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button id="btnExport" title="Xuất CSV">Xuất CSV</button>
+          <button id="btnReset" class="secondary" title="Xoá bộ lọc">Xoá lọc</button>
+        </div>
+      </div>
+
+      <div id="tags" style="margin:4px 0 10px 0"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th class="stt">STT</th>
+            <th>Đề bài</th>
+            <th>Đáp án</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+
+      <div class="foot">
+        <div id="count">0 mục</div>
+        <div>Gợi ý: dùng dấu phẩy để tìm nhiều cụm cùng lúc (ví dụ: <span class="tag">rủi ro</span><span class="tag">Annex A</span>).</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// --- Dữ liệu nguồn (20 dòng) ---
+const DATA = [
+  { stt: 1, de: "Điều gì xảy ra khi tổ chức không tuân thủ ISO 27001?", dap: "Có nguy cơ rò rỉ thông tin và mất uy tín" },
+  { stt: 2, de: "Một yêu cầu cốt lõi của ISO 27001 là gì?", dap: "Cải tiến liên tục" },
+  { stt: 3, de: "ISO 27001 coi trọng yếu tố nào ngoài công nghệ?", dap: "Con người và quy trình" },
+  { stt: 4, de: "Ai phải cam kết với ISMS?", dap: "Ban lãnh đạo cao nhất" },
+  { stt: 5, de: "ISO 27001 dựa trên cách tiếp cận nào?", dap: "Quản lý rủi ro" },
+  { stt: 6, de: "ISO/IEC 27001:2022 có bao nhiêu điều khoản?", dap: "10" },
+  { stt: 7, de: "Phạm vi triển khai chứng nhận ISO/IEC 27001:2022 tại VPS?", dap: "Phát triển, quản lý, vận hành và duy trì Hệ thống CNTT cho giao dịch chứng khoán trực tuyến của Công ty Cổ phần Chứng khoán VPS" },
+  { stt: 8, de: "ISO/IEC 27001:2022 thay thế cho phiên bản nào?", dap: "ISO 27001:2013" },
+  { stt: 9, de: "ISO 27001 giúp tổ chức tuân thủ?", dap: "Luật pháp và hợp đồng" },
+  { stt: 10, de: "ISO 27001 hướng đến yếu tố nào?", dap: "Quản lý rủi ro an toàn thông tin" },
+  { stt: 11, de: "Annex A được chia thành mấy nhóm kiểm soát?", dap: "4" },
+  { stt: 12, de: "ISO 27001 giúp tăng sự tin tưởng của ai?", dap: "Khách hàng và đối tác" },
+  { stt: 13, de: "Tại sao cần sao lưu dữ liệu theo ISO 27001?", dap: "Để đảm bảo sẵn sàng khi có sự cố" },
+  { stt: 14, de: "Một đặc điểm quan trọng của ISMS là gì?", dap: "Tích hợp vào quy trình tổ chức" },
+  { stt: 15, de: "Cam kết của lãnh đạo trong ISO 27001 bao gồm?", dap: "Tất cả đáp án" },
+  { stt: 16, de: "Mục tiêu chính của ISO/IEC 27001 là gì?", dap: "Bảo mật tài sản thông tin" },
+  { stt: 17, de: "ISO/IEC 27001:2022 là tiêu chuẩn quốc tế về lĩnh vực nào?", dap: "An toàn thông tin, an ninh mạng và quyền riêng tư" },
+  { stt: 18, de: "Ba nguyên tắc CIA là gì?", dap: "Confidentiality – Integrity – Availability" },
+  { stt: 19, de: "Tại sao cần chính sách “Bàn sạch màn sạch”?", dap: "Để tránh lộ lọt thông tin" },
+  { stt: 20, de: "Phiên bản 2022 có bao nhiêu biện pháp kiểm soát trong Annex A?", dap: "93" },
+];
+
+const $q = document.querySelector('#q');
+const $col = document.querySelector('#col');
+const $match = document.querySelector('#match');
+const $tbody = document.querySelector('#tbody');
+const $count = document.querySelector('#count');
+const $tags = document.querySelector('#tags');
+const $btnExport = document.querySelector('#btnExport');
+const $btnReset = document.querySelector('#btnReset');
+
+function escHtml(s){return s.replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+function highlight(text, terms){
+  if(!terms.length) return escHtml(text);
+  let out = escHtml(text);
+  terms.forEach(t=>{
+    if(!t) return;
+    const re = new RegExp(`(${t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`,'gi');
+    out = out.replace(re,'<span class="hl">$1</span>');
+  });
+  return out;
+}
+
+function renderRows(rows, terms){
+  $tbody.innerHTML = rows.map(r=>`
+    <tr>
+      <td class="stt">${r.stt}</td>
+      <td>${highlight(r.de, terms)}</td>
+      <td>${highlight(r.dap, terms)}</td>
+    </tr>`).join('');
+  $count.textContent = `${rows.length} mục`;
+}
+
+function parseTerms(){
+  return $q.value.split(',').map(s=>s.trim()).filter(Boolean);
+}
+
+function matchText(haystack, needle, mode){
+  if(!needle) return true;
+  haystack = haystack.toLowerCase();
+  needle   = needle.toLowerCase();
+  if(mode==='exact') return haystack === needle;
+  if(mode==='starts') return haystack.startsWith(needle);
+  return haystack.includes(needle);
+}
+
+function applyFilter(){
+  const terms = parseTerms();
+  const col = $col.value; const mode = $match.value;
+  const filtered = DATA.filter(r=>{
+    if(terms.length===0) return true;
+    return terms.every(t=>{
+      if(col==='stt') return matchText(String(r.stt), t, mode);
+      if(col==='de')  return matchText(r.de, t, mode);
+      if(col==='dap') return matchText(r.dap, t, mode);
+      // all
+      return (
+        matchText(String(r.stt), t, mode) ||
+        matchText(r.de, t, mode) ||
+        matchText(r.dap, t, mode)
+      );
+    });
+  });
+  renderRows(filtered, terms);
+  renderTags(terms);
+}
+
+function renderTags(terms){
+  $tags.innerHTML = terms.map(t=>`<span class="tag" data-term="${escHtml(t)}">${escHtml(t)} ✕</span>`).join('');
+  $tags.querySelectorAll('.tag').forEach(el=>{
+    el.addEventListener('click',()=>{
+      const term = el.getAttribute('data-term');
+      const arr = parseTerms().filter(x=>x!==term);
+      $q.value = arr.join(', ');
+      applyFilter();
+    });
+  });
+}
+
+function toCSV(rows){
+  const header = ['STT','Đề bài','Đáp án'];
+  const lines = [header.join(',')].concat(rows.map(r=>[
+    r.stt,
+    '"'+r.de.replace(/"/g,'""')+'"',
+    '"'+r.dap.replace(/"/g,'""')+'"'
+  ].join(',')));
+  return lines.join('\n');
+}
+
+$btnExport.addEventListener('click',()=>{
+  const terms = parseTerms();
+  const col = $col.value; const mode = $match.value;
+  const filtered = DATA.filter(r=>{
+    if(terms.length===0) return true;
+    return terms.every(t=>{
+      if(col==='stt') return matchText(String(r.stt), t, mode);
+      if(col==='de')  return matchText(r.de, t, mode);
+      if(col==='dap') return matchText(r.dap, t, mode);
+      return (
+        matchText(String(r.stt), t, mode) ||
+        matchText(r.de, t, mode) ||
+        matchText(r.dap, t, mode)
+      );
+    });
+  });
+  const blob = new Blob(["\ufeff" + toCSV(filtered)], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'ISO27001_QA_filtered.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+
+$btnReset.addEventListener('click',()=>{ $q.value=''; $col.value='all'; $match.value='contains'; applyFilter(); $q.focus(); });
+
+$q.addEventListener('input', applyFilter);
+$col.addEventListener('change', applyFilter);
+$match.addEventListener('change', applyFilter);
+
+// init
+applyFilter();
+</script>
+</body>
+</html>
